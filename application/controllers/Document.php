@@ -31,7 +31,7 @@ class Document extends CI_Controller {
         }
     }
 
-    //Editor Konva
+    // Editor Konva
     public function konva($filename = null) {
         if ($filename == null) redirect('document/upload');
         $data['filename'] = $filename;
@@ -47,6 +47,7 @@ class Document extends CI_Controller {
             return;
         }
 
+    
         while (ob_get_level()) ob_end_clean();
 
         //Header lengkap untuk PDF.js
@@ -85,12 +86,16 @@ class Document extends CI_Controller {
             'file' => base_url('uploads/annotated/' . $filename)
         ]);
     }
+
+
+    
     // Simpan hasil annotated (PDF langsung)
 public function save_pdf_server() {
     if (empty($_FILES['pdf_file']['tmp_name'])) {
         echo json_encode(['status' => 'error', 'message' => 'Tidak ada file PDF diterima']);
         return;
     }
+
 
     $folder = FCPATH . 'uploads/annotated/';
     if (!file_exists($folder)) mkdir($folder, 0777, true);
