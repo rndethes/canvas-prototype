@@ -8,9 +8,9 @@ class Document extends CI_Controller {
         $this->load->helper(array('form', 'url', 'file'));
     }
 
-    //Halaman upload PDF
+   // --- Halaman utama: upload atau canvas kosong
     public function upload() {
-        $this->load->view('upload_pdf');
+    $this->load->view('upload_pdf');
     }
 
     //Proses upload PDF
@@ -36,6 +36,11 @@ class Document extends CI_Controller {
         if ($filename == null) redirect('document/upload');
         $data['filename'] = $filename;
         $this->load->view('document_konva', $data);
+    }
+
+     // --- Halaman canvas kosong (tanpa PDF)
+    public function canvas_blank() {
+        $this->load->view('canvas_blank');
     }
 
     //PDF Viewer Proxy (agar PDF.js bisa render)
