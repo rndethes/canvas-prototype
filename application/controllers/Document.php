@@ -8,12 +8,12 @@ class Document extends CI_Controller {
         $this->load->helper(array('form', 'url', 'file'));
     }
 
-    // 🔹 Halaman upload PDF
+    //Halaman upload PDF
     public function upload() {
         $this->load->view('upload_pdf');
     }
 
-    // 🔹 Proses upload PDF
+    //Proses upload PDF
     public function upload_action() {
         $config['upload_path']   = './uploads/documents/';
         $config['allowed_types'] = 'pdf';
@@ -31,25 +31,41 @@ class Document extends CI_Controller {
         }
     }
 
-    // 🔹 Editor Konva untuk menggambar
+    //Editor Konva
     public function konva($filename = null) {
         if ($filename == null) redirect('document/upload');
         $data['filename'] = $filename;
         $this->load->view('document_konva', $data);
     }
 
-    // 🔹 Proxy PDF agar bisa dibaca PDF.js
+    //PDF Viewer Proxy (agar PDF.js bisa render)
     public function view_pdf($filename) {
         $path = FCPATH . 'uploads/documents/' . $filename;
-        if (file_exists($path)) {
-            header('Content-Type: application/pdf');
-            readfile($path);
-        } else {
+
+        if (!file_exists($path)) {
             show_404();
+            return;
         }
+
+        while (ob_get_level()) ob_end_clean();
+
+        //Header lengkap untuk PDF.js
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Range');
+        header('Accept-Ranges: bytes');
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . basename($filename) . '"');
+        header('Content-Length: ' . filesize($path));
+
+        //Kirim data PDF mentah
+        $fp = fopen($path, 'rb');
+        fpassthru($fp);
+        fclose($fp);
+        exit;
     }
 
-    // 🔹 Simpan hasil coretan (base64 image)
+    //Simpan hasil coretan ke server
     public function save_canvas() {
         $data = json_decode(file_get_contents('php://input'), true);
         if (empty($data['image'])) {
@@ -69,19 +85,27 @@ class Document extends CI_Controller {
             'file' => base_url('uploads/annotated/' . $filename)
         ]);
     }
-
-    // 🆕 🔹 Daftar hasil annotated
-    public function list() {
-        $path = FCPATH . 'uploads/annotated/';
-        $files = glob($path . '*.png');
-        $data['annotated_files'] = array_map('basename', $files);
-        $this->load->view('annotated_list', $data);
+    // Simpan hasil annotated (PDF langsung)
+public function save_pdf_server() {
+    if (empty($_FILES['pdf_file']['tmp_name'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Tidak ada file PDF diterima']);
+        return;
     }
 
-    // 🆕 🔹 Buka ulang hasil annotated di Konva
-    public function open_annotated($filename = null) {
-        if ($filename == null) redirect('document/list');
-        $data['filename'] = $filename;
-        $this->load->view('annotated_view', $data);
+    $folder = FCPATH . 'uploads/annotated/';
+    if (!file_exists($folder)) mkdir($folder, 0777, true);
+
+    $newName = 'annotated_' . time() . '.pdf';
+    $target = $folder . $newName;
+
+    if (move_uploaded_file($_FILES['pdf_file']['tmp_name'], $target)) {
+        echo json_encode([
+            'status' => 'success',
+            'file' => base_url('uploads/annotated/' . $newName)
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan file PDF']);
     }
+}
+
 }
