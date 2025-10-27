@@ -17,7 +17,7 @@ class Document extends CI_Controller {
     public function upload_action() {
         $config['upload_path']   = './uploads/documents/';
         $config['allowed_types'] = 'pdf';
-        $config['max_size']      = 10240;
+        $config['max_size']      = 51200;
         $config['encrypt_name']  = TRUE;
 
         $this->load->library('upload', $config);
